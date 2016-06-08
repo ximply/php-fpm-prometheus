@@ -27,7 +27,7 @@ Finally, point Prometheus to `http://127.0.0.1:8080/metrics`.
 
 ## Contributing
 
-All contributions are welcome, but if you are considering significant changes, please open issue beforehand and discuss it with us.
+All contributions are welcome, but if you are considering significant changes, please open an issue beforehand and discuss it with us.
 
 ## License
 
