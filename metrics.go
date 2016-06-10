@@ -10,17 +10,17 @@ import (
 
 // Metrics contains the status data collected from PHP-FPM.
 type Metrics struct {
-	StartSince         int `help:"Seconds since FPM start" type:"counter" name:"start_since"`
-	AcceptedConn       int `help:"Total of accepted connections" type:"counter" name:"accepted_conn"`
-	ListenQueue        int `help:"Number of connections that have been initiated but not yet accepted" type:"gauge" name:"listen_queue"`
-	MaxListenQueue     int `help:"Max. connections the listen queue has reached since FPM start" type:"counter" name:"max_listen_queue"`
-	ListenQueueLength  int `help:"Maximum number of connections that can be queued" type:"gauge" name:"listen_queue_length"`
-	IdleProcesses      int `help:"Idle process count" type:"gauge" name:"idle_processes"`
-	ActiveProcesses    int `help:"Active process count" type:"gauge" name:"active_processes"`
-	TotalProcesses     int `help:"Total process count" type:"gauge" name:"total_processes"`
-	MaxActiveProcesses int `help:"Maximum active process count" type:"counter" name:"max_active_processes"`
-	MaxChildrenReached int `help:"Number of times the process limit has been reached" type:"counter" name:"max_children_reached"`
-	SlowRequests       int `help:"Number of requests that exceed request_slowlog_timeout" type:"counter" name:"slow_requests"`
+	StartSince         int `help:"Seconds since FPM start" type:"counter" name:"php_fpm_start_since"`
+	AcceptedConn       int `help:"Total of accepted connections" type:"counter" name:"php_fpm_accepted_conn"`
+	ListenQueue        int `help:"Number of connections that have been initiated but not yet accepted" type:"gauge" name:"php_fpm_listen_queue"`
+	MaxListenQueue     int `help:"Max. connections the listen queue has reached since FPM start" type:"counter" name:"php_fpm_max_listen_queue"`
+	ListenQueueLength  int `help:"Maximum number of connections that can be queued" type:"gauge" name:"php_fpm_listen_queue_length"`
+	IdleProcesses      int `help:"Idle process count" type:"gauge" name:"php_fpm_idle_processes"`
+	ActiveProcesses    int `help:"Active process count" type:"gauge" name:"php_fpm_active_processes"`
+	TotalProcesses     int `help:"Total process count" type:"gauge" name:"php_fpm_total_processes"`
+	MaxActiveProcesses int `help:"Maximum active process count" type:"counter" name:"php_fpm_max_active_processes"`
+	MaxChildrenReached int `help:"Number of times the process limit has been reached" type:"counter" name:"php_fpm_max_children_reached"`
+	SlowRequests       int `help:"Number of requests that exceed request_slowlog_timeout" type:"counter" name:"php_fpm_slow_requests"`
 }
 
 // NewMetricsFromMatches creates a new Metrics instance and populates it with given data.
