@@ -34,12 +34,16 @@ func main() {
 			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				resp, err := http.Get(fpmStatusURL)
 				if err != nil {
-					log.Fatal(err)
+					log.Println(err)
+					w.WriteHeader(http.StatusInternalServerError)
+					return
 				}
 
 				body, err := ioutil.ReadAll(resp.Body)
 				if err != nil {
-					log.Fatal(err)
+					log.Println(err)
+					w.WriteHeader(http.StatusInternalServerError)
+					return
 				}
 				resp.Body.Close()
 
