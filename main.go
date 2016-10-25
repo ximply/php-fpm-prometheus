@@ -36,8 +36,17 @@ func main() {
 			ReadTimeout: time.Duration(5) * time.Second,
 			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				resp, err := http.Get(fpmStatusURL)
+
 				if err != nil {
 					log.Println(err)
+					scrapeFailures = scrapeFailures+1
+					x := strconv.Itoa(scrapeFailures)
+					NewMetricsFromMatches([][]string{{"scrape failure:","scrape failure",x}}).WriteTo(w)
+					return
+				}
+
+				if (resp.StatusCode != http.StatusOK){
+					log.Println("php-fpm status code is not OK.")
 					scrapeFailures = scrapeFailures+1
 					x := strconv.Itoa(scrapeFailures)
 					NewMetricsFromMatches([][]string{{"scrape failure:","scrape failure",x}}).WriteTo(w)
@@ -52,6 +61,7 @@ func main() {
 					NewMetricsFromMatches([][]string{{"scrape failure:","scrape failure",x}}).WriteTo(w)
 					return
 				}
+
 				resp.Body.Close()
 
 				x := strconv.Itoa(scrapeFailures)
