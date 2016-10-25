@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"regexp"
 	"time"
+	"strconv"
 )
 
 var (
@@ -26,6 +27,8 @@ func main() {
 		fpmStatusURL = *url
 	}
 
+	scrapeFailures := 0
+
 	server := &graceful.Server{
 		Timeout: 10 * time.Second,
 		Server: &http.Server{
@@ -35,19 +38,26 @@ func main() {
 				resp, err := http.Get(fpmStatusURL)
 				if err != nil {
 					log.Println(err)
-					w.WriteHeader(http.StatusInternalServerError)
+					scrapeFailures = scrapeFailures+1
+					x := strconv.Itoa(scrapeFailures)
+					NewMetricsFromMatches([][]string{{"scrape failure:","scrape failure",x}}).WriteTo(w)
 					return
 				}
 
 				body, err := ioutil.ReadAll(resp.Body)
 				if err != nil {
 					log.Println(err)
-					w.WriteHeader(http.StatusInternalServerError)
+					scrapeFailures = scrapeFailures+1
+					x := strconv.Itoa(scrapeFailures)
+					NewMetricsFromMatches([][]string{{"scrape failure:","scrape failure",x}}).WriteTo(w)
 					return
 				}
 				resp.Body.Close()
 
+				x := strconv.Itoa(scrapeFailures)
+
 				matches := statusLineRegexp.FindAllStringSubmatch(string(body), -1)
+				matches = append(matches,[]string{"scrape failure:","scrape failure",x})
 
 				NewMetricsFromMatches(matches).WriteTo(w)
 			}),

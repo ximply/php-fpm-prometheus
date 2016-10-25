@@ -21,6 +21,7 @@ type Metrics struct {
 	MaxActiveProcesses int `help:"Maximum active process count" type:"counter" name:"php_fpm_max_active_processes"`
 	MaxChildrenReached int `help:"Number of times the process limit has been reached" type:"counter" name:"php_fpm_max_children_reached"`
 	SlowRequests       int `help:"Number of requests that exceed request_slowlog_timeout" type:"counter" name:"php_fpm_slow_requests"`
+	ScrapeFailures     int `help:"Number of errors while scraping php_fpm" type:"counter" name:"php_fpm_exporter_scrape_failures_total"`
 }
 
 // NewMetricsFromMatches creates a new Metrics instance and populates it with given data.
@@ -57,7 +58,10 @@ func (m *Metrics) populateFromMatches(matches [][]string) {
 			m.MaxChildrenReached, _ = strconv.Atoi(value)
 		case "slow requests":
 			m.SlowRequests, _ = strconv.Atoi(value)
+		case "scrape failure":
+			m.ScrapeFailures, _ = strconv.Atoi(value)
 		}
+
 	}
 }
 
