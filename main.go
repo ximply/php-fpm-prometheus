@@ -2,13 +2,13 @@ package main
 
 import (
 	"flag"
-	"gopkg.in/tylerb/graceful.v1"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"regexp"
-	"time"
 	"strconv"
+	"os"
+	"net"
 )
 
 var (
@@ -18,7 +18,7 @@ var (
 
 func main() {
 	url := flag.String("status-url", "", "PHP-FPM status URL")
-	addr := flag.String("addr", "0.0.0.0:8080", "IP/port for the HTTP server")
+	addr := flag.String("unix-sock", "/dev/shm/php-fpm_exporter.sock", "unix sock for access")
 	flag.Parse()
 
 	if *url == "" {
@@ -28,53 +28,61 @@ func main() {
 	}
 
 	scrapeFailures := 0
+	mux := http.NewServeMux()
+	mux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
+		resp, err := http.Get(fpmStatusURL)
 
-	server := &graceful.Server{
-		Timeout: 10 * time.Second,
-		Server: &http.Server{
-			Addr:        *addr,
-			ReadTimeout: time.Duration(5) * time.Second,
-			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				resp, err := http.Get(fpmStatusURL)
+		if err != nil {
+			log.Println(err)
+			scrapeFailures = scrapeFailures+1
+			x := strconv.Itoa(scrapeFailures)
+			NewMetricsFromMatches([][]string{{"scrape failure:","scrape failure",x}}).WriteTo(w)
+			return
+		}
 
-				if err != nil {
-					log.Println(err)
-					scrapeFailures = scrapeFailures+1
-					x := strconv.Itoa(scrapeFailures)
-					NewMetricsFromMatches([][]string{{"scrape failure:","scrape failure",x}}).WriteTo(w)
-					return
-				}
+		if (resp.StatusCode != http.StatusOK){
+			log.Println("php-fpm status code is not OK.")
+			scrapeFailures = scrapeFailures+1
+			x := strconv.Itoa(scrapeFailures)
+			NewMetricsFromMatches([][]string{{"scrape failure:","scrape failure",x}}).WriteTo(w)
+			return
+		}
 
-				if (resp.StatusCode != http.StatusOK){
-					log.Println("php-fpm status code is not OK.")
-					scrapeFailures = scrapeFailures+1
-					x := strconv.Itoa(scrapeFailures)
-					NewMetricsFromMatches([][]string{{"scrape failure:","scrape failure",x}}).WriteTo(w)
-					return
-				}
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Println(err)
+			scrapeFailures = scrapeFailures+1
+			x := strconv.Itoa(scrapeFailures)
+			NewMetricsFromMatches([][]string{{"scrape failure:","scrape failure",x}}).WriteTo(w)
+			return
+		}
 
-				body, err := ioutil.ReadAll(resp.Body)
-				if err != nil {
-					log.Println(err)
-					scrapeFailures = scrapeFailures+1
-					x := strconv.Itoa(scrapeFailures)
-					NewMetricsFromMatches([][]string{{"scrape failure:","scrape failure",x}}).WriteTo(w)
-					return
-				}
+		resp.Body.Close()
 
-				resp.Body.Close()
+		x := strconv.Itoa(scrapeFailures)
 
-				x := strconv.Itoa(scrapeFailures)
+		matches := statusLineRegexp.FindAllStringSubmatch(string(body), -1)
+		matches = append(matches,[]string{"scrape failure:","scrape failure",x})
 
-				matches := statusLineRegexp.FindAllStringSubmatch(string(body), -1)
-				matches = append(matches,[]string{"scrape failure:","scrape failure",x})
-
-				NewMetricsFromMatches(matches).WriteTo(w)
-			}),
-		},
+		NewMetricsFromMatches(matches).WriteTo(w)
+	})
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`<html>
+             <head><title>php-fpm Exporter</title></head>
+             <body>
+             <h1>php-fpm Exporter</h1>
+             <p><a href='` + "/metrics" + `'>Metrics</a></p>
+             </body>
+             </html>`))
+	})
+	server := http.Server{
+		Handler: mux, // http.DefaultServeMux,
 	}
+	os.Remove(*addr)
 
-	if err := server.ListenAndServe(); err != nil {
-		log.Fatal(err)
+	listener, err := net.Listen("unix", *addr)
+	if err != nil {
+		panic(err)
 	}
+	server.Serve(listener)
 }
